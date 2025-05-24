@@ -1,0 +1,63 @@
+"ui";
+
+// واجهة المستخدم
+ui.layout(
+    <vertical padding="16">
+        <text text="سكربت فري فاير - أيم مساعد" textSize="20sp" textColor="black" gravity="center" />
+        <seekbar id="speed" max="200" progress="100" />
+        <text text="سرعة التصويب" gravity="center" />
+
+        <seekbar id="power" max="100" progress="30" />
+        <text text="قوة رفع الأيم" gravity="center" />
+
+        <button id="start" text="تشغيل السكربت" />
+        <button id="stop" text="إيقاف السكربت" />
+    </vertical>
+);
+
+let running = false;
+let thread = null;
+
+ui.start.click(() => {
+    if (!running) {
+        running = true;
+        thread = startAimAssist(ui.speed.progress, ui.power.progress);
+        toast("السكربت شغال");
+    }
+});
+
+ui.stop.click(() => {
+    if (running && thread) {
+        running = false;
+        thread.interrupt();
+        toast("تم إيقاف السكربت");
+    }
+});
+
+function startAimAssist(speed, power) {
+    return threads.start(function () {
+        requestScreenCapture();
+        toast("تم تفعيل التقاط الشاشة");
+
+        let triggerX = 1000, triggerY = 600;
+
+        function isTriggerPressed() {
+            var c = captureScreen();
+            var color = colors.pixel(c, triggerX, triggerY);
+            return colors.red(color) > 200;
+        }
+
+        function aim() {
+            swipe(device.width / 2, device.height / 2, device.width / 2, device.height / 2 - random(power, power + 20), random(10, speed));
+        }
+
+        while (running) {
+            if (isTriggerPressed()) {
+                aim();
+                sleep(random(300, 500));
+            } else {
+                sleep(100);
+            }
+        }
+    });
+}
